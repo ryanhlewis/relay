@@ -121,7 +121,8 @@ export class Server extends EventEmitter {
 
   private handleIntroductionRequest = (userName: UserName) => (data: any) => {
     const A = userName // A and B always refer to peer userNames
-    const message = JSON.parse(data.toString()) as Message.ClientToServer
+    const message = ((() => { try { return JSON.parse(data.toString()) } catch(e) { return JSON.parse("") } }) as unknown) as Message.ClientToServer
+
 
     const currentDocumentIds = this.documentIds[A] ?? []
 
