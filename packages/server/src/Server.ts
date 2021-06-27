@@ -137,10 +137,13 @@ export class Server extends EventEmitter {
 
       case 'Join':
         this.log('introduction request: %o', message)
+        // if the documentId requested does not exist, explicitly reject
+        if(!currentDocumentIds.includes(message.documentIds))  this.send(this.peers[A], 'reject')
+   
         // An introduction request from the client will include a list of documentIds to join.
         // We combine those documentIds with any we already have and deduplicate.
         this.documentIds[A] = currentDocumentIds.concat(message.documentIds).reduce(deduplicate, [])
-
+        
         // if this peer (A) has interests in common with any existing peer (B), introduce them to each other
         for (const B in this.peers) {
           // don't introduce peer to themselves
@@ -155,6 +158,15 @@ export class Server extends EventEmitter {
           }
         }
         break
+        
+      case 'Host':
+        // if the documentId requested already exists, explicitly reject
+        if(currentDocumentIds.includes(message.documentIds))  this.send(this.peers[A], 'reject')
+
+        // An introduction request from the host will include a list of documentIds to join.
+        this.documentIds[A] = currentDocumentIds.concat(message.documentIds)
+        break
+        
       case 'Leave':
         // remove the provided documentIds from this peer's list
         this.documentIds[A] = currentDocumentIds.filter(id => !message.documentIds.includes(id))
