@@ -8,7 +8,7 @@ export type ConnectRequestParams = {
 }
 
 export namespace Message {
-  export type ClientToServer = Join | Leave | Heartbeat
+  export type ClientToServer = Join | Host | Leave | Heartbeat
 
   export interface Heartbeat {
     type: 'Heartbeat'
@@ -16,6 +16,11 @@ export namespace Message {
 
   export interface Join {
     type: 'Join'
+    documentIds: DocumentId[]
+  }
+  
+  export interface Host {
+    type: 'Host'
     documentIds: DocumentId[]
   }
 
