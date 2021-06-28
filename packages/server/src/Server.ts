@@ -137,11 +137,6 @@ export class Server extends EventEmitter {
 
       case 'Join':
         this.log('introduction request: %o', message)
-        // if the documentId requested does not exist, explicitly reject
-        if(!currentDocumentIds.includes(message.documentIds[0])) {
-          this.peers[A].send(JSON.stringify('{type:Reject}'))
-          this.peers[A].close();
-        }
 
         // An introduction request from the client will include a list of documentIds to join.
         // We combine those documentIds with any we already have and deduplicate.
@@ -158,19 +153,35 @@ export class Server extends EventEmitter {
             this.log('sending introductions', A, B, commonKeys)
             this.sendIntroduction(A, B, commonKeys)
             this.sendIntroduction(B, A, commonKeys)
+            return;
           }
         }
+        // if the documentId requested does not exist, explicitly reject
+        this.peers[A].send(JSON.stringify('{type:Reject}'))
+        this.peers[A].close();
         break
         
       case 'Host':
-        // if the documentId requested already exists, explicitly reject
-        if(currentDocumentIds.includes(message.documentIds[0])) {
-          this.peers[A].send(JSON.stringify('{type:Reject}'))
-          this.peers[A].close();
-        }
 
         // An introduction request from the host will include a list of documentIds to join.
-        this.documentIds[A] = currentDocumentIds.concat(message.documentIds)
+        // We combine those documentIds with any we already have and deduplicate.
+        this.documentIds[A] = currentDocumentIds.concat(message.documentIds).reduce(deduplicate, [])
+
+        // if this peer (A) has interests in common with any existing peer (B), introduce them to each other
+         for (const B in this.peers) {
+          // don't introduce peer to themselves
+          if (A === B) continue
+
+          // find documentIds that both peers are interested in
+          const commonKeys = intersection(this.documentIds[A], this.documentIds[B])
+          if (commonKeys.length) {
+            // if the documentId requested already exists, explicitly reject
+            this.peers[A].send(JSON.stringify('{type:Reject}'))
+            this.peers[A].close();
+            return;
+          }
+        }
+
         break
         
       case 'Leave':
