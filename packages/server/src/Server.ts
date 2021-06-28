@@ -153,12 +153,12 @@ export class Server extends EventEmitter {
             this.log('sending introductions', A, B, commonKeys)
             this.sendIntroduction(A, B, commonKeys)
             this.sendIntroduction(B, A, commonKeys)
-            return;
+            return
           }
         }
         // if the documentId requested does not exist, explicitly reject
-        this.peers[A].send(JSON.stringify('{type:Reject}'))
-        this.peers[A].close();
+        this.sendCustom(A,'{type:Reject}')
+        this.closeIntroductionConnection(A)
         break
         
       case 'Host':
@@ -176,9 +176,9 @@ export class Server extends EventEmitter {
           const commonKeys = intersection(this.documentIds[A], this.documentIds[B])
           if (commonKeys.length) {
             // if the documentId requested already exists, explicitly reject
-            this.peers[A].send(JSON.stringify('{type:Reject}'))
-            this.peers[A].close();
-            return;
+            this.sendCustom(A,'{type:Reject}')
+            this.closeIntroductionConnection(A)
+            return
           }
         }
 
@@ -202,6 +202,23 @@ export class Server extends EventEmitter {
         console.error('Failed to send message to peer')
       }
     }
+  }
+
+  private send1(peer: WebSocket, message: string) {
+    if (peer && peer.readyState === WebSocket.OPEN) {
+      try {
+        peer.send(JSON.stringify(message))
+      } catch (err) {
+        console.error('Failed to send message to peer')
+      }
+    }
+  }
+
+  // If we find another peer interested in the same documentId(s), we send both peers an introduction,
+  // which they can use to connect
+  private sendCustom = (A: UserName, word: string) => {
+    let peer = this.peers[A]
+    this.send1(peer, word)
   }
 
   // If we find another peer interested in the same documentId(s), we send both peers an introduction,
