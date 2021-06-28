@@ -138,11 +138,11 @@ export class Server extends EventEmitter {
       case 'Join':
         this.log('introduction request: %o', message)
         // if the documentId requested does not exist, explicitly reject
-        if(!currentDocumentIds.includes(message.documentIds[0])) {
+        if(!this.documentIds[A].includes(message.documentIds[0])) {
           this.peers[A].send(JSON.stringify('{type:Reject}'))
           this.peers[A].close();
         }
-        
+
         // An introduction request from the client will include a list of documentIds to join.
         // We combine those documentIds with any we already have and deduplicate.
         this.documentIds[A] = currentDocumentIds.concat(message.documentIds).reduce(deduplicate, [])
@@ -164,7 +164,7 @@ export class Server extends EventEmitter {
         
       case 'Host':
         // if the documentId requested already exists, explicitly reject
-        if(currentDocumentIds.includes(message.documentIds[0])) {
+        if(this.documentIds[A].includes(message.documentIds[0])) {
           this.peers[A].send(JSON.stringify('{type:Reject}'))
           this.peers[A].close();
         }
