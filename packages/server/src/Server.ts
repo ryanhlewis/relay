@@ -113,7 +113,7 @@ export class Server extends EventEmitter {
   private openIntroductionConnection(socket: WebSocket, userName: UserName) {
     this.peers[userName] = socket
 
-    socket.on('message', this.handleIntroductionRequest(userName))
+    socket.on('message', () => {try {this.handleIntroductionRequest(userName)} catch(e) {return}})
     socket.on('close', this.closeIntroductionConnection(userName))
 
     this.emit('introductionConnection', userName)
@@ -138,8 +138,11 @@ export class Server extends EventEmitter {
       case 'Join':
         this.log('introduction request: %o', message)
         // if the documentId requested does not exist, explicitly reject
-        if(!currentDocumentIds.includes(message.documentIds[0])) WebSocket.send(JSON.stringify('{type:Reject}'))
-   
+        if(!currentDocumentIds.includes(message.documentIds[0])) {
+          var peer: WebSocket
+          peer.send(JSON.stringify('{type:Reject}'))
+        }
+        
         // An introduction request from the client will include a list of documentIds to join.
         // We combine those documentIds with any we already have and deduplicate.
         this.documentIds[A] = currentDocumentIds.concat(message.documentIds).reduce(deduplicate, [])
@@ -161,7 +164,10 @@ export class Server extends EventEmitter {
         
       case 'Host':
         // if the documentId requested already exists, explicitly reject
-        if(currentDocumentIds.includes(message.documentIds[0]))  WebSocket.send(JSON.stringify('{type:Reject}'))
+        if(currentDocumentIds.includes(message.documentIds[0]))  {
+          var peer: WebSocket
+          peer.send(JSON.stringify('{type:Reject}'))
+        }
 
         // An introduction request from the host will include a list of documentIds to join.
         this.documentIds[A] = currentDocumentIds.concat(message.documentIds)
