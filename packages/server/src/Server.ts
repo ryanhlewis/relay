@@ -62,6 +62,12 @@ export class Server extends EventEmitter {
 
   public log: debug.Debugger
 
+  /**
+   * Barebones lobby system
+   */
+  public lobbies: Record<UserName, string> = {}
+
+
   constructor({ port = 8080 } = {}) {
     super()
     this.log = debug(`lf:relay:${port}`)
@@ -87,6 +93,20 @@ export class Server extends EventEmitter {
         this.log('received connection request', A, B)
         this.openConnection({ socket: ws, A, B, documentId })
       })
+
+      // This lobby system is editable by anyone with an internet connection,
+      // by design, as there's no actual implementation or known "hosts".
+
+      // Lobby request
+      app.get('/lobbies', (req, res) => {
+        res.send(this.lobbies).end()
+      });
+
+      // Lobby update
+      app.get('/lobbies/:lobby/:playerCount', (req, res) => {
+        this.lobbies[req.params.lobby] = req.params.playerCount
+        res.json(req.params);
+      });
 
       this.httpServer = app
         .listen(this.port, () => {
