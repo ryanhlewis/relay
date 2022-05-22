@@ -104,7 +104,10 @@ export class Server extends EventEmitter {
 
       // Lobby update
       app.get('/lobbies/:lobby/:playerCount', (req, res) => {
-        this.lobbies[req.params.lobby] = req.params.playerCount
+        if(req.params.playerCount != "0")
+          this.lobbies[req.params.lobby] = req.params.playerCount
+        else 
+          delete this.lobbies[req.params.lobby]
         res.json(req.params);
       });
 
